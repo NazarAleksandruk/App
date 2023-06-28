@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import { useEffect, useState } from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import PropTypes from 'prop-types';
@@ -38,103 +38,97 @@ const defaultProps = {
     },
 };
 
-class CloseAccountPage extends Component {
-    constructor(props) {
-        super(props);
+function CloseAccountPage({ formatPhoneNumber, translate, session }) {
+    const [modalState, setModalState] = useState({
+        isConfirmModalVisible: false,
+        reasonForLeaving: '',
+    });
 
-        this.onConfirm = this.onConfirm.bind(this);
-        this.validate = this.validate.bind(this);
-        this.hideConfirmModal = this.hideConfirmModal.bind(this);
-        this.showConfirmModal = this.showConfirmModal.bind(this);
-        CloseAccount.clearError();
-        this.state = {
-            isConfirmModalVisible: false,
-            reasonForLeaving: '',
-        };
+    useEffect(() => {
+        return () => {
+            CloseAccount.clearError();
+        }
+    }, [])
+
+    function onConfirm() {
+        User.closeAccount(modalState.reasonForLeaving);
+        hideConfirmModal();
     }
 
-    componentWillUnmount() {
-        CloseAccount.clearError();
-    }
-
-    onConfirm() {
-        User.closeAccount(this.state.reasonForLeaving);
-        this.hideConfirmModal();
-    }
-
-    showConfirmModal(values) {
-        this.setState({
+    function showConfirmModal (values) {
+        setModalState({
             isConfirmModalVisible: true,
             reasonForLeaving: values.reasonForLeaving,
         });
     }
 
-    hideConfirmModal() {
-        this.setState({isConfirmModalVisible: false});
+    function hideConfirmModal() {
+        setModalState({isConfirmModalVisible: false});
     }
 
-    validate(values) {
-        const userEmailOrPhone = this.props.formatPhoneNumber(this.props.session.email);
+    function validate(values) {
+        const userEmailOrPhone = formatPhoneNumber(session.email);
         const errors = {};
 
         if (_.isEmpty(values.phoneOrEmail) || userEmailOrPhone.toLowerCase() !== values.phoneOrEmail.toLowerCase()) {
             errors.phoneOrEmail = 'closeAccountPage.enterYourDefaultContactMethod';
         }
+
         return errors;
     }
 
-    render() {
-        const userEmailOrPhone = this.props.formatPhoneNumber(this.props.session.email);
-        return (
-            <ScreenWrapper includeSafeAreaPaddingBottom={false}>
-                <HeaderWithBackButton
-                    title={this.props.translate('closeAccountPage.closeAccount')}
-                    onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_SECURITY)}
-                />
-                <Form
-                    formID={ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM}
-                    validate={this.validate}
-                    onSubmit={this.showConfirmModal}
-                    submitButtonText={this.props.translate('closeAccountPage.closeAccount')}
-                    style={[styles.flexGrow1, styles.mh5]}
-                    isSubmitActionDangerous
-                >
-                    <View style={[styles.flexGrow1]}>
-                        <Text>{this.props.translate('closeAccountPage.reasonForLeavingPrompt')}</Text>
-                        <TextInput
-                            inputID="reasonForLeaving"
-                            autoGrowHeight
-                            textAlignVertical="top"
-                            label={this.props.translate('closeAccountPage.enterMessageHere')}
-                            containerStyles={[styles.mt5, styles.autoGrowHeightMultilineInput]}
-                        />
-                        <Text style={[styles.mt5]}>
-                            {this.props.translate('closeAccountPage.enterDefaultContactToConfirm')} <Text style={[styles.textStrong]}>{userEmailOrPhone}</Text>.
-                        </Text>
-                        <TextInput
-                            inputID="phoneOrEmail"
-                            autoCapitalize="none"
-                            label={this.props.translate('closeAccountPage.enterDefaultContact')}
-                            containerStyles={[styles.mt5]}
-                            autoCorrect={false}
-                            keyboardType={Str.isValidEmail(userEmailOrPhone) ? CONST.KEYBOARD_TYPE.EMAIL_ADDRESS : CONST.KEYBOARD_TYPE.DEFAULT}
-                        />
-                        <ConfirmModal
-                            title={this.props.translate('closeAccountPage.closeAccountWarning')}
-                            onConfirm={this.onConfirm}
-                            onCancel={this.hideConfirmModal}
-                            isVisible={this.state.isConfirmModalVisible}
-                            prompt={this.props.translate('closeAccountPage.closeAccountPermanentlyDeleteData')}
-                            confirmText={this.props.translate('common.yesContinue')}
-                            cancelText={this.props.translate('common.cancel')}
-                            shouldShowCancelButton
-                            danger
-                        />
-                    </View>
-                </Form>
-            </ScreenWrapper>
-        );
-    }
+    
+    const userEmailOrPhone = formatPhoneNumber(session.email);
+
+    return (
+        <ScreenWrapper includeSafeAreaPaddingBottom={false}>
+            <HeaderWithBackButton
+                title={translate('closeAccountPage.closeAccount')}
+                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_SECURITY)}
+            />
+            <Form
+                formID={ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM}
+                validate={validate}
+                onSubmit={showConfirmModal}
+                submitButtonText={translate('closeAccountPage.closeAccount')}
+                style={[styles.flexGrow1, styles.mh5]}
+                isSubmitActionDangerous
+            >
+                <View style={[styles.flexGrow1]}>
+                    <Text>{translate('closeAccountPage.reasonForLeavingPrompt')}</Text>
+                    <TextInput
+                        inputID="reasonForLeaving"
+                        autoGrowHeight
+                        textAlignVertical="top"
+                        label={translate('closeAccountPage.enterMessageHere')}
+                        containerStyles={[styles.mt5, styles.autoGrowHeightMultilineInput]}
+                    />
+                    <Text style={[styles.mt5]}>
+                        {translate('closeAccountPage.enterDefaultContactToConfirm')} <Text style={[styles.textStrong]}>{userEmailOrPhone}</Text>.
+                    </Text>
+                    <TextInput
+                        inputID="phoneOrEmail"
+                        autoCapitalize="none"
+                        label={translate('closeAccountPage.enterDefaultContact')}
+                        containerStyles={[styles.mt5]}
+                        autoCorrect={false}
+                        keyboardType={Str.isValidEmail(userEmailOrPhone) ? CONST.KEYBOARD_TYPE.EMAIL_ADDRESS : CONST.KEYBOARD_TYPE.DEFAULT}
+                    />
+                    <ConfirmModal
+                        title={translate('closeAccountPage.closeAccountWarning')}
+                        onConfirm={onConfirm}
+                        onCancel={hideConfirmModal}
+                        isVisible={modalState.isConfirmModalVisible}
+                        prompt={translate('closeAccountPage.closeAccountPermanentlyDeleteData')}
+                        confirmText={translate('common.yesContinue')}
+                        cancelText={translate('common.cancel')}
+                        shouldShowCancelButton
+                        danger
+                    />
+                </View>
+            </Form>
+        </ScreenWrapper>
+    );
 }
 
 CloseAccountPage.propTypes = propTypes;
@@ -149,3 +143,4 @@ export default compose(
         },
     }),
 )(CloseAccountPage);
+
